@@ -33,9 +33,18 @@ Success: Named scenarios show RED then GREEN; independent verification confirms 
 - Final assistant text MUST restore recognized aliases without changing non-target blocks or incoming objects; only S2's supported tool-call argument fields may also change. Streaming is outside the guarantee.
 - **S3.1** Given a finalized assistant response containing aliased paths, when message_end runs, then text paths and S2's supported tool arguments are restored, while other blocks and original input remain unchanged.
 
+### S4 — Gemini-only route adjustment [behavior]
+
+> "si aplica eso y dime como quedarian las rutas que se envian al modelo segun el request de ejemplo que tenemos"
+
+- Path projection MUST activate only when the request model ID contains `gemini`, case-insensitively; absent or other IDs MUST leave paths unchanged. Existing preamble/docs/environment guideline filters MUST remain active for all models.
+- Restoration MUST follow whether the outgoing request enabled aliases, not a later selected model.
+- **S4.1** Given Gemini, mixed-case Gemini, non-Gemini or missing model context, when projecting and finalizing a response, then only Gemini requests translate paths, restoration follows the request even if model selection changes, and non-path filters remain active.
+
 ## Expected files
 
 - T1: `pi-extension/index.ts`, `pi-extension/path-aliases.ts`, `pi-extension/index.test.mjs`, `pi-extension/path-aliases.test.mjs`, `pi-extension/README.md`, `README.md`
+- T3: `pi-extension/index.ts`, `pi-extension/index.test.mjs`, `pi-extension/path-aliases.test.mjs`, `pi-extension/README.md`, `README.md`
 
 ## Tasks
 
@@ -43,10 +52,13 @@ Success: Named scenarios show RED then GREEN; independent verification confirms 
 |---|---|---|---|---|
 | T1 | S1-S3 | gentle-ai-worker | done | implementation 3e31d8a; correction 1503d3b; independent 8/8 exit 0 |
 | T2 | S1-S3 | gentle-ai-verify | blocked | S1/S3 defect recheck passed; S2 installed-runtime integration proof unavailable; needs human disposition |
+| T3 | S4 | gentle-ai-worker | in_progress | Gemini conditional activation; tests-only checkpoint pending |
+| T4 | S4 | gentle-ai-verify | pending | scoped independent verification only, no retry of missing S2 integration |
 
 ## Log
 
 - **L1** original request: "crea commit de los cambios y luego si comencemos con las rutas propias de pi. ya eliminamos la referencia de hacia los docs propios de pi. pero aun son necesarias otras rutas propias de pi por instrucciones que se usan. luego con el dir .pi y gentle-pi haremos lo mismo,"
+- **L3** Gemini-only adjustment accepted: "si aplica eso y dime como quedarian las rutas que se envian al modelo segun el request de ejemplo que tenemos". Accepted proposal: ctx.model.id case-insensitive includes gemini, path-only gating, response restoration tied to request activation. This does not waive prior S2 missing integration proof.
 - **L2** bash inclusion accepted: "si hagamos la prueba de incluirlos"
 - **E1 — RED checkpoint.** Worker observed three existing tests passing (exit 0), and S1.1/S2.1/S3.1 failing with AssertionError (exit 1, stderr empty). Parent reviewed tests and committed tests-only checkpoint 521c61838aa3f696fbad2017b7983315c9996d3c before authorizing source implementation.
 - **D1 — Root discovery.** Choice: getPackageDir() from the active host, lazy enough to preserve Node tests without a locally installed runtime dependency. Alternatives: fixed user installation path or import resolution from extension directory. Rationale: installed API exports active runtime root and supports alternate installations.

@@ -9,13 +9,46 @@ function setup(packageRoot = root) {
 	extension({ on(name, handler) { hooks.set(name, handler); } }, { getPackageDir: () => packageRoot });
 	return hooks;
 }
+const gemini = { model: { id: "gemini-pro" } };
+function context(hooks, event) {
+	return hooks.get("context_with_system")(event, gemini);
+}
 async function aliasFor(hooks) {
-	const result = await hooks.get("context_with_system")({ type: "context_with_system", messages: [{ role: "user", content: root }] });
+	const result = await context(hooks, { type: "context_with_system", messages: [{ role: "user", content: root }] });
 	const alias = result.messages[0].content;
 	assert.notEqual(alias, root, "the core root must receive a neutral alias");
 	assert.ok(alias.length > 0);
 	return alias;
 }
+
+test("S4.1 gates path projection by request model and retains filters and request-bound restoration", async (t) => {
+	for (const [name, model, enabled, laterModel] of [
+		["Gemini", { id: "gemini-pro" }, true, { id: "other" }],
+		["mixed-case Gemini", { id: "vendor-GeMiNi-pro" }, true, undefined],
+		["non-Gemini", { id: "other" }, false, { id: "gemini-pro" }],
+		["missing model", undefined, false, { id: "gemini-pro" }],
+	]) {
+		await t.test(name, async () => {
+			const hooks = setup();
+			const alias = "/__runtime_root__";
+			const guideline = "You can inspect PI_* environment variables for current model and session details.";
+			const messages = [{ role: "system", sections: { preamble: "old", docs: "docs", rules: `- ${guideline}\n- Keep ${root}/rules` } }, { role: "user", content: `Read ${root}/file` }];
+			const original = structuredClone(messages);
+			const result = await hooks.get("context_with_system")({ type: "context_with_system", messages }, { model });
+			assert.deepEqual(result.messages, [
+				{ role: "system", sections: { preamble: "You are a coding assistant. Help users inspect files, run commands, and modify code.", docs: "", rules: `- Keep ${enabled ? alias : root}/rules` } },
+				{ role: "user", content: `Read ${enabled ? alias : root}/file` },
+			]);
+			assert.deepEqual(messages, original);
+			const message = { role: "assistant", content: [{ type: "text", text: `See ${alias}/file` }, { type: "toolCall", id: "read", name: "read", arguments: { path: `${alias}/file` } }] };
+			const before = structuredClone(message);
+			const finalized = await hooks.get("message_end")({ type: "message_end", message }, { model: laterModel });
+			const expected = enabled ? { ...message, content: [{ type: "text", text: `See ${root}/file` }, { type: "toolCall", id: "read", name: "read", arguments: { path: `${root}/file` } }] } : message;
+			assert.deepEqual(finalized?.message ?? message, expected);
+			assert.deepEqual(message, before);
+		});
+	}
+});
 
 test("S1.1 projects textual paths consistently without changing other values or input", async () => {
 	const hooks = setup();
@@ -33,7 +66,7 @@ test("S1.1 projects textual paths consistently without changing other values or 
 	expected[2].content[0].text = `${alias}/b`;
 	expected[2].content[1].arguments.path = `${alias}/c`;
 	expected[3].content[0].text = `${alias}/d`;
-	const result = await hooks.get("context_with_system")({ type: "context_with_system", messages });
+	const result = await context(hooks, { type: "context_with_system", messages });
 	assert.deepEqual(result.messages, expected);
 	assert.deepEqual(messages, original);
 });
@@ -41,9 +74,9 @@ test("S1.1 projects textual paths consistently without changing other values or 
 test("S1.1 and S3.1 translate sentence-final periods without changing distinct prefixes", async () => {
 	const hooks = setup();
 	const alias = await aliasFor(hooks);
-	const context = hooks.get("context_with_system");
+	const project = (event) => context(hooks, event);
 	const text = `First ${root}. Next ${root}-other and ${root}.extension. Last ${root}.`;
-	const result = await context({ type: "context_with_system", messages: [{ role: "user", content: text }] });
+	const result = await project({ type: "context_with_system", messages: [{ role: "user", content: text }] });
 	assert.equal(result.messages[0].content, `First ${alias}. Next ${root}-other and ${root}.extension. Last ${alias}.`);
 	const final = await hooks.get("message_end")({ type: "message_end", message: { role: "assistant", content: [{ type: "text", text: `First ${alias}. Next ${alias}-other and ${alias}.extension. Last ${alias}.` }] } });
 	assert.equal(final.message.content[0].text, `First ${root}. Next ${alias}-other and ${alias}.extension. Last ${root}.`);
@@ -52,8 +85,7 @@ test("S1.1 and S3.1 translate sentence-final periods without changing distinct p
 test("S1.1 Windows root retains separators and similar prefixes remain distinct", async () => {
 	const windowsRoot = "C:\\Synthetic Space\\runtime";
 	const hooks = setup(windowsRoot);
-	const context = hooks.get("context_with_system");
-	const project = async (content) => (await context({ type: "context_with_system", messages: [{ role: "user", content }] })).messages[0].content;
+	const project = async (content) => (await context(hooks, { type: "context_with_system", messages: [{ role: "user", content }] })).messages[0].content;
 	const alias = await project(windowsRoot);
 	assert.notEqual(alias, windowsRoot);
 	assert.equal(await project(windowsRoot), alias);
