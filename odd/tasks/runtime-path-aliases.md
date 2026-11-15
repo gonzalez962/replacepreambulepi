@@ -52,12 +52,14 @@ Success: Named scenarios show RED then GREEN; independent verification confirms 
 |---|---|---|---|---|
 | T1 | S1-S3 | gentle-ai-worker | done | implementation 3e31d8a; correction 1503d3b; independent 8/8 exit 0 |
 | T2 | S1-S3 | gentle-ai-verify | blocked | S1/S3 defect recheck passed; S2 installed-runtime integration proof unavailable; needs human disposition |
-| T3 | S4 | gentle-ai-worker | in_progress | Gemini conditional activation; tests-only checkpoint pending |
-| T4 | S4 | gentle-ai-verify | pending | scoped independent verification only, no retry of missing S2 integration |
+| T3 | S4 | gentle-ai-worker | done | RED 4b1bce5; GREEN 14/14 exit 0; implementation 843a724 |
+| T4 | S4 | gentle-ai-verify | blocked | independent S4 PASS 14/14 and probe exit 0; gate exit 1 NO RED; requires human disposition |
 
 ## Log
 
 - **L1** original request: "crea commit de los cambios y luego si comencemos con las rutas propias de pi. ya eliminamos la referencia de hacia los docs propios de pi. pero aun son necesarias otras rutas propias de pi por instrucciones que se usan. luego con el dir .pi y gentle-pi haremos lo mismo,"
+- **E6 — Gemini bounded verification result.** Independent S4 pass: 14/14 scoped tests exit 0, stderr empty; independent handler probe exit 0 covers missing ctx/id, mixed-case ID, no discovery when disabled, base filters and request-bound restoration/reset. Mechanical gate job-2 exit 1: S4.1 NO RED; other structural checks pass. Observed initial nested test failures do not replace the gate result. Gate not rerun or weakened; T4 blocked for human disposition of missing mechanical RED evidence. S2 installed runtime proof remains separately unavailable.
+- **E5 — Gemini implementation and slice boundary.** RED 4b1bce5 preceded 843a724; parent observed 14/14 scoped tests and diff check pass. Slice boundary at 843a724: accumulated authored changes approximately 410 lines since origin/main. No additional source scope in this slice; only closure evidence follows. Publishing/PR remains unauthorized. Native assess unassessable due untracked file, independent S4 verification still required. Old S2 integration is not retried.
 - **L3** Gemini-only adjustment accepted: "si aplica eso y dime como quedarian las rutas que se envian al modelo segun el request de ejemplo que tenemos". Accepted proposal: ctx.model.id case-insensitive includes gemini, path-only gating, response restoration tied to request activation. This does not waive prior S2 missing integration proof.
 - **L2** bash inclusion accepted: "si hagamos la prueba de incluirlos"
 - **E1 — RED checkpoint.** Worker observed three existing tests passing (exit 0), and S1.1/S2.1/S3.1 failing with AssertionError (exit 1, stderr empty). Parent reviewed tests and committed tests-only checkpoint 521c61838aa3f696fbad2017b7983315c9996d3c before authorizing source implementation.
