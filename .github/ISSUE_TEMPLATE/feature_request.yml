@@ -1,0 +1,50 @@
+name: Feature request
+description: Propose an improvement with a clear outcome and scope.
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe one improvement per issue. Search existing issues before submitting.
+        Do not include secrets, private prompts, or raw request captures.
+        Submitting this form does not approve implementation or grant permissions.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Pi extension
+        - System prompt capture server
+        - CLIProxyAPI plugin
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Problem or need
+      description: Explain the current limitation and who would benefit from addressing it.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+      description: Describe the observable behavior you want, with a sanitized example when useful.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List concrete checks that would demonstrate the improvement is complete.
+      placeholder: |
+        - Given ..., when ..., then ...
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Scope and alternatives
+      description: Optional exclusions, compatibility constraints, risks, and alternatives considered.
