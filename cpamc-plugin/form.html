@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>System replacements</title>
+<style>
+:root{color-scheme:dark;font:15px/1.5 system-ui,-apple-system,sans-serif;background:#0d1117;color:#f0f6fc}*{box-sizing:border-box}body{max-width:1200px;margin:auto;padding:2rem 1.25rem}h1{font-size:1.7rem;margin:0}h2{font-size:1.1rem;margin:0}.intro,.hint{color:#b1bac4}header{margin-bottom:1.5rem}.layout{display:grid;grid-template-columns:minmax(280px, .85fr) minmax(0,1.15fr);gap:1rem;align-items:start}section{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1.2rem}label{display:block;font-weight:600;margin:1rem 0 .35rem}textarea{width:100%;min-height:110px;resize:vertical;font:inherit;padding:.65rem;background:#0d1117;color:inherit;border:1px solid #484f58;border-radius:6px}button{font:inherit;color:inherit;background:#21262d;border:1px solid #484f58;border-radius:6px;padding:.6rem .85rem;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}button:not(:disabled):hover{border-color:#58a6ff}button:focus-visible,textarea:focus-visible{outline:2px solid #58a6ff;outline-offset:2px}.primary{background:#1f6feb;border-color:#388bfd;font-weight:600}.actions,.heading{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}.actions{margin-top:1rem}.hint{font-size:.9rem;margin:.4rem 0}#status{min-height:1.5em}#rules{list-style:none;padding:0;margin:0}#rules li{border-top:1px solid #30363d;padding:1rem 0;display:grid;gap:.5rem}pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font:inherit}#session{color:#b1bac4}#count{color:#b1bac4} @media(max-width:720px){body{padding:1rem}.layout{grid-template-columns:1fr}}
+</style></head><body><header><h1>System replacements</h1><p class="intro">Edit literal instruction replacements. Changes apply to new requests immediately.</p><p id="session">Checking session…</p></header><main class="layout"><section><h2>Add a rule</h2><form id="form"><label for="match">Match text</label><textarea id="match" required></textarea><label for="replacement">Replacement text</label><textarea id="replacement"></textarea><p class="hint">Leave replacement empty to delete matching text.</p><div class="actions"><button class="primary" id="add" type="submit">Add rule</button></div></form><p id="status" role="status" aria-live="polite"></p></section><section><div class="heading"><h2>Active rules <span id="count"></span></h2><button id="refresh" type="button">Refresh</button></div><p class="hint">Rules run in order and match case exactly.</p><p id="empty">Loading rules…</p><ul id="rules"></ul></section></main>
+<script>
+(() => {
+  const el = id => document.getElementById(id);
+  const route = '/v0/management/plugins/replacesystemprompt/rules';
+  const signIn = 'Sign in to CPAMC with Remember password enabled, then refresh.';
+  let busy = false;
+  function readKey(storage) {
+    let raw = storage && storage.getItem('cli-proxy-auth');
+    if (!raw) return '';
+    const isV2 = raw.startsWith('enc::v2::');
+    if (isV2 || raw.startsWith('enc::v1::')) {
+      const cipher = new TextEncoder().encode('cli-proxy-api-webui::secure-storage|' + (window.location.host || 'localhost') + (isV2 ? '' : '|' + (navigator.userAgent || '')));
+      const binary = atob(raw.slice(9));
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < bytes.length; i++) bytes[i] = binary.charCodeAt(i) ^ cipher[i % cipher.length];
+      raw = new TextDecoder().decode(bytes);
+    }
+    const value = JSON.parse(raw)?.state?.managementKey;
+    return value ? String(value).trim() : '';
+  }
+  function key() {
+    try { if (window.parent && window.parent !== window) { const value = readKey(window.parent.localStorage); if (value) return value; } } catch (_) {}
+    try { return readKey(window.localStorage); } catch (_) { return ''; }
+  }
+  function setBusy(value) {
+    busy = value; el('add').disabled = value; el('refresh').disabled = value;
+    for (const item of el('rules').children) item.children[2].disabled = value;
+  }
+  async function request(method, body) {
+    const credential = key();
+    if (!credential) { el('session').textContent = 'Session unavailable'; throw new Error('session'); }
+    el('session').textContent = 'Session available';
+    const response = await fetch(route, {method, headers:{Authorization:'Bearer ' + credential, 'Content-Type':'application/json'}, body:body === undefined ? undefined : JSON.stringify(body), cache:'no-store', credentials:'same-origin', redirect:'error'});
+    if (!response.ok) { if (response.status === 401 || response.status === 403) throw new Error('session'); throw new Error('request'); }
+    return response.json();
+  }
+  function render(rules) {
+    el('rules').replaceChildren(); el('count').textContent = '(' + rules.length + ')';
+    el('empty').hidden = rules.length > 0; el('empty').textContent = 'No rules yet. Add a match to get started.';
+    for (const rule of rules) {
+      const row = document.createElement('li'), match = document.createElement('pre'), replacement = document.createElement('pre'), remove = document.createElement('button');
+      match.textContent = rule.match; replacement.textContent = rule.replacement || '(delete matching text)';
+      remove.textContent = 'Remove'; remove.type = 'button'; remove.disabled = busy;
+      remove.setAttribute('aria-label', 'Remove rule');
+      remove.addEventListener('click', () => action('DELETE', {match:rule.match}));
+      row.append(match, replacement, remove); el('rules').append(row);
+    }
+  }
+  async function action(method, body) {
+    if (busy) return;
+    setBusy(true); el('status').textContent = method === 'GET' ? 'Loading rules…' : 'Saving changes…';
+    try {
+      const result = await request(method, body);
+      if (method !== 'GET') {
+        if (method === 'POST') { el('match').value = ''; el('replacement').value = ''; }
+        render(result);
+        el('status').textContent = 'Changes saved.';
+      } else { render(result); el('status').textContent = 'Rules loaded.'; }
+    } catch (error) {
+      el('status').textContent = error.message === 'session' ? signIn : 'Unable to complete request. Please retry.';
+      if (method === 'GET') el('empty').textContent = 'Rules could not be loaded. Retry using Refresh.';
+    } finally { setBusy(false); }
+  }
+  el('form').addEventListener('submit', event => { event.preventDefault(); return action('POST', {match:el('match').value, replacement:el('replacement').value}); });
+  el('refresh').addEventListener('click', () => action('GET'));
+  action('GET');
+})();
+</script></body></html>
