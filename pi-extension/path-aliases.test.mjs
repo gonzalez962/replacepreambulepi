@@ -38,6 +38,17 @@ test("S1.1 projects textual paths consistently without changing other values or 
 	assert.deepEqual(messages, original);
 });
 
+test("S1.1 and S3.1 translate sentence-final periods without changing distinct prefixes", async () => {
+	const hooks = setup();
+	const alias = await aliasFor(hooks);
+	const context = hooks.get("context_with_system");
+	const text = `First ${root}. Next ${root}-other and ${root}.extension. Last ${root}.`;
+	const result = await context({ type: "context_with_system", messages: [{ role: "user", content: text }] });
+	assert.equal(result.messages[0].content, `First ${alias}. Next ${root}-other and ${root}.extension. Last ${alias}.`);
+	const final = await hooks.get("message_end")({ type: "message_end", message: { role: "assistant", content: [{ type: "text", text: `First ${alias}. Next ${alias}-other and ${alias}.extension. Last ${alias}.` }] } });
+	assert.equal(final.message.content[0].text, `First ${root}. Next ${alias}-other and ${alias}.extension. Last ${root}.`);
+});
+
 test("S1.1 Windows root retains separators and similar prefixes remain distinct", async () => {
 	const windowsRoot = "C:\\Synthetic Space\\runtime";
 	const hooks = setup(windowsRoot);

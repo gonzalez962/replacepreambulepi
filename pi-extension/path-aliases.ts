@@ -11,7 +11,7 @@ function replacePrefix(text: string, from: string, to: string): string {
 		const before = text[index - 1];
 		const after = text[index + from.length];
 		const start = !before || /[\s"'`([{=,:;]/.test(before);
-		const end = !after || /[\\/\s"'`)\]},:;]/.test(after);
+		const end = !after || /[\\/\s"'`)\]},:;]/.test(after) || (after === "." && (!text[index + from.length + 1] || /\s/.test(text[index + from.length + 1])));
 		result += text.slice(cursor, index) + (start && end ? to : from);
 		cursor = index + from.length;
 	}
