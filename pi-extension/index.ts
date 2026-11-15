@@ -10,8 +10,10 @@ const environmentGuideline = "You can inspect PI_* environment variables for cur
 export default function (pi: ExtensionAPI, options?: { getPackageDir?: () => string }) {
 	let aliases: Promise<ReturnType<typeof pathAliases>> | undefined;
 	const getAliases = () => aliases ??= (async () => pathAliases(options?.getPackageDir ? options.getPackageDir() : (await import("@earendil-works/pi-coding-agent")).getPackageDir()))();
-	pi.on("context_with_system", async (event) => {
-		const { project } = await getAliases();
+	let aliasesEnabled = false;
+	pi.on("context_with_system", async (event, ctx) => {
+		aliasesEnabled = ctx?.model?.id?.toLowerCase().includes("gemini") ?? false;
+		const project = aliasesEnabled ? (await getAliases()).project : (text: string) => text;
 		return { messages: event.messages.map((original) => {
 			let message = original;
 			if (typeof message.content === "string") message = { ...message, content: project(message.content) } as typeof message;
@@ -43,7 +45,7 @@ export default function (pi: ExtensionAPI, options?: { getPackageDir?: () => str
 	});
 	pi.on("message_end", async (event) => {
 		const message = event.message;
-		if (message.role !== "assistant") return;
+		if (message.role !== "assistant" || !aliasesEnabled) return;
 		const { restore } = await getAliases();
 		return { message: { ...message, content: message.content.map((block) => {
 			if (block.type === "text") return { ...block, text: restore(block.text) };

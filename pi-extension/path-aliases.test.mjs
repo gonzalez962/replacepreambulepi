@@ -50,6 +50,23 @@ test("S4.1 gates path projection by request model and retains filters and reques
 	}
 });
 
+test("S4.1 disabled requests do not discover the runtime root and reset previous activation", async () => {
+	let discoveries = 0;
+	const hooks = new Map();
+	extension({ on(name, handler) { hooks.set(name, handler); } }, { getPackageDir: () => { discoveries++; return root; } });
+	const event = { type: "context_with_system", messages: [{ role: "user", content: root }] };
+	await hooks.get("context_with_system")(event, { model: { id: "other" } });
+	await hooks.get("message_end")({ type: "message_end", message: { role: "assistant", content: [{ type: "text", text: "/__runtime_root__/file" }] } });
+	assert.equal(discoveries, 0);
+	await context(hooks, event);
+	assert.equal(discoveries, 1);
+	await hooks.get("context_with_system")(event, {});
+	const message = { role: "assistant", content: [{ type: "text", text: "/__runtime_root__/file" }] };
+	const result = await hooks.get("message_end")({ type: "message_end", message }, gemini);
+	assert.deepEqual(result?.message ?? message, message);
+	assert.equal(discoveries, 1);
+});
+
 test("S1.1 projects textual paths consistently without changing other values or input", async () => {
 	const hooks = setup();
 	const alias = await aliasFor(hooks);
