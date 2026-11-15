@@ -1,0 +1,52 @@
+name: Bug report
+description: Report a reproducible problem with a repository component.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe one problem per issue. Search existing issues before submitting.
+        Do not include API keys, authorization headers, private prompts, or raw request captures.
+        Replace personal paths and identifiers with placeholders in any examples.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Pi extension
+        - System prompt capture server
+        - CLIProxyAPI plugin
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest reproducible example, commands, and relevant configuration with sensitive values removed.
+      placeholder: |
+        1. Start the component with ...
+        2. Perform ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include operating system, component version or commit, runtime version, and model ID if relevant. Do not include credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Optional error messages, minimal log excerpts, or screenshots. Inspect all attachments for sensitive information before uploading.
