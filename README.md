@@ -8,7 +8,7 @@ All commands below run from this repository's root unless noted otherwise.
 
 | Component | Purpose | Entry point |
 | --- | --- | --- |
-| [Pi extension](pi-extension/README.md) | Replace the structured system preamble in outgoing Pi requests. | `pi-extension/index.ts` |
+| [Pi extension](pi-extension/README.md) | Customize the preamble, suppress Pi docs, and remove the PI environment guideline in outgoing requests. | `pi-extension/index.ts` |
 | [System prompt capture server](capture-system-prompt/README.md) | Capture instructions from API requests locally without forwarding them to a model. | `capture-system-prompt/server.cjs` |
 | [CLIProxyAPI plugin](cpamc-plugin/README.md) | Apply configurable literal replacements to system/developer instructions during request normalization. | `cpamc-plugin/main.go` |
 
@@ -26,9 +26,11 @@ The extension listens to `context_with_system` and replaces existing `sections.p
 You are a coding assistant. Help users inspect files, run commands, and modify code.
 ```
 
-It preserves other message properties and tool declarations. It does not create missing preamble sections, rewrite opaque system text, or modify persisted session history. A full prompt imposed through `before_agent_start` can bypass this replacement, and extensions loaded afterward can change the outgoing request again.
+The `docsReplacement` constant defaults to `""`, suppressing existing `sections.docs` content; set it to custom section text if needed. The extension also removes the exact sentence `You can inspect PI_* environment variables for current model and session details.` from `sections.rules`, including its standalone bullet line. This does not remove environment variables or restrict access to them.
 
-See [the extension README](pi-extension/README.md) for integration details. Its statement that the default replacement is empty does not match the current source.
+For requests whose model ID contains `gemini` (case-insensitive), it also projects the active core installation path to a neutral alias in outgoing text and historical tool arguments, then restores final assistant text and supported model-issued read/grep/find/ls paths and bash commands before permission inspection. A missing or non-matching model ID disables path translation; provider identity is not used. Restoration follows the outgoing request's activation even if the selected model changes. The preamble, docs, and rules filters apply to all models. Tool declarations remain unchanged; `.pi` and `gentle-pi` are not targeted. Bash substitution is literal and requires appropriate shell quoting. Aliases are not a security boundary, streaming is not concealed, and later extensions can change messages or inputs. It does not create missing preamble/docs sections; a full prompt imposed through `before_agent_start` can bypass projection.
+
+See [the extension README](pi-extension/README.md) for configuration, patch behavior, and integration limits.
 
 ## System prompt capture server
 
@@ -69,6 +71,6 @@ Rules are persisted in `replacesystemprompt-rules.json`. The selected directory 
 | --- | --- | --- |
 | Capture server | `node --test capture-system-prompt/server.test.cjs` | Node.js 22+. |
 | Plugin configuration form | `node --test cpamc-plugin/form.test.cjs` | Node.js test runner. This does not test the native plugin. |
-| Pi extension | `node --test pi-extension/index.test.mjs` | Node.js 22.19+. The current test expects an empty replacement, while the source uses the nonempty text shown above. |
+| Pi extension | `node --test pi-extension/index.test.mjs pi-extension/path-aliases.test.mjs` | Node.js 22.19+. Covers preamble/docs replacement, guideline removal, and preservation of unrelated transcript data. |
 
 Native plugin tests are in `cpamc-plugin/plugin_test.go`; running them requires the compatible host module and dependencies described above.
