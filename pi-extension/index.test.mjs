@@ -2,9 +2,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import extension from "./index.ts";
 
+function handlers(options) {
+	const registered = new Map();
+	extension({ on(name, callback) { registered.set(name, callback); } }, options);
+	return registered;
+}
+
 test("replaces only existing preamble sections across the request without mutation", async () => {
-	let handler;
-	extension({ on(name, callback) { assert.equal(name, "context_with_system"); handler = callback; } });
+	const handler = handlers().get("context_with_system");
 	assert.ok(handler);
 	const messages = [
 		{ role: "system", content: "base", sections: { preamble: "future text", rules: "rules" }, toolsAdded: [{ name: "read", description: "read", parameters: { type: "object" } }], timestamp: 1 },
@@ -25,9 +30,7 @@ test("replaces only existing preamble sections across the request without mutati
 });
 
 function project(messages) {
-	let handler;
-	extension({ on(name, callback) { assert.equal(name, "context_with_system"); handler = callback; } });
-	return handler({ type: "context_with_system", messages });
+	return handlers().get("context_with_system")({ type: "context_with_system", messages });
 }
 
 test("empties existing docs in initial and patch messages without changing other fields", async () => {
