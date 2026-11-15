@@ -4,9 +4,9 @@ import extension from "./index.ts";
 
 // Synthetic paths only: handlers are invoked directly and never execute tools.
 const root = "/synthetic/core runtime";
-function setup() {
+function setup(packageRoot = root) {
 	const hooks = new Map();
-	extension({ on(name, handler) { hooks.set(name, handler); } }, { getPackageDir: () => root });
+	extension({ on(name, handler) { hooks.set(name, handler); } }, { getPackageDir: () => packageRoot });
 	return hooks;
 }
 async function aliasFor(hooks) {
@@ -36,6 +36,19 @@ test("S1.1 projects textual paths consistently without changing other values or 
 	const result = await hooks.get("context_with_system")({ type: "context_with_system", messages });
 	assert.deepEqual(result.messages, expected);
 	assert.deepEqual(messages, original);
+});
+
+test("S1.1 Windows root retains separators and similar prefixes remain distinct", async () => {
+	const windowsRoot = "C:\\Synthetic Space\\runtime";
+	const hooks = setup(windowsRoot);
+	const context = hooks.get("context_with_system");
+	const project = async (content) => (await context({ type: "context_with_system", messages: [{ role: "user", content }] })).messages[0].content;
+	const alias = await project(windowsRoot);
+	assert.notEqual(alias, windowsRoot);
+	assert.equal(await project(windowsRoot), alias);
+	assert.equal(await project(`${windowsRoot}\\doc ${windowsRoot}-other`), `${alias}\\doc ${windowsRoot}-other`);
+	const result = await hooks.get("message_end")({ type: "message_end", message: { role: "assistant", content: [{ type: "text", text: `${alias}\\doc` }] } });
+	assert.equal(result.message.content[0].text, `${windowsRoot}\\doc`);
 });
 
 test("S2.1 restores supported tool inputs before permission inspection without executing operations", async () => {

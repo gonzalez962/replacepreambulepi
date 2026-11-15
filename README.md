@@ -28,7 +28,7 @@ You are a coding assistant. Help users inspect files, run commands, and modify c
 
 The `docsReplacement` constant defaults to `""`, suppressing existing `sections.docs` content; set it to custom section text if needed. The extension also removes the exact sentence `You can inspect PI_* environment variables for current model and session details.` from `sections.rules`, including its standalone bullet line. This does not remove environment variables or restrict access to them.
 
-It preserves other message properties and tool declarations. It does not create missing preamble/docs sections, rewrite opaque system text, or modify persisted session history. A full prompt imposed through `before_agent_start` can bypass this replacement, and extensions loaded afterward can change the outgoing request again.
+It also projects the active core installation path to a neutral alias in outgoing text and historical tool arguments, then restores final assistant text and supported model-issued read/grep/find/ls paths and bash commands before permission inspection. Tool declarations remain unchanged; `.pi` and `gentle-pi` are not targeted. Bash substitution is literal and requires appropriate shell quoting. Aliases are not a security boundary, streaming is not concealed, and later extensions can change messages or inputs. It does not create missing preamble/docs sections; a full prompt imposed through `before_agent_start` can bypass projection.
 
 See [the extension README](pi-extension/README.md) for configuration, patch behavior, and integration limits.
 
@@ -71,6 +71,6 @@ Rules are persisted in `replacesystemprompt-rules.json`. The selected directory 
 | --- | --- | --- |
 | Capture server | `node --test capture-system-prompt/server.test.cjs` | Node.js 22+. |
 | Plugin configuration form | `node --test cpamc-plugin/form.test.cjs` | Node.js test runner. This does not test the native plugin. |
-| Pi extension | `node --test pi-extension/index.test.mjs` | Node.js 22.19+. Covers preamble/docs replacement, guideline removal, and preservation of unrelated transcript data. |
+| Pi extension | `node --test pi-extension/index.test.mjs pi-extension/path-aliases.test.mjs` | Node.js 22.19+. Covers preamble/docs replacement, guideline removal, and preservation of unrelated transcript data. |
 
 Native plugin tests are in `cpamc-plugin/plugin_test.go`; running them requires the compatible host module and dependencies described above.

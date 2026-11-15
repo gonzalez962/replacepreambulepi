@@ -4,7 +4,7 @@ import extension from "./index.ts";
 
 function handlers(options) {
 	const registered = new Map();
-	extension({ on(name, callback) { registered.set(name, callback); } }, options);
+	extension({ on(name, callback) { registered.set(name, callback); } }, options ?? { getPackageDir: () => "/synthetic/core" });
 	return registered;
 }
 
