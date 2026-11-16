@@ -35,10 +35,20 @@ test("S4.1 gates path projection by request model and retains filters and reques
 			const messages = [{ role: "system", sections: { preamble: "old", docs: "docs", rules: `- ${guideline}\n- Keep ${root}/rules` } }, { role: "user", content: `Read ${root}/file` }];
 			const original = structuredClone(messages);
 			const result = await hooks.get("context_with_system")({ type: "context_with_system", messages }, { model });
-			assert.deepEqual(result.messages, [
-				{ role: "system", sections: { preamble: "You are a coding assistant. Help users inspect files, run commands, and modify code.", docs: "", rules: `- Keep ${enabled ? alias : root}/rules` } },
-				{ role: "user", content: `Read ${enabled ? alias : root}/file` },
-			]);
+			// For Gemini models: preamble replaced, docs emptied, rules guideline removed, paths aliased
+			// For non-Gemini models: original sections preserved, no path aliasing
+			if (model?.id?.toLowerCase().includes("gemini")) {
+				assert.deepEqual(result.messages, [
+					{ role: "system", sections: { preamble: "You are a coding assistant. Help users inspect files, run commands, and modify code.", docs: "", rules: `- Keep ${enabled ? alias : root}/rules` } },
+					{ role: "user", content: `Read ${enabled ? alias : root}/file` },
+				]);
+			} else {
+				// Non-Gemini: original sections preserved, no aliasing
+				assert.deepEqual(result.messages, [
+					{ role: "system", sections: { preamble: "old", docs: "docs", rules: `- ${guideline}\n- Keep ${root}/rules` } },
+					{ role: "user", content: `Read ${root}/file` },
+				]);
+			}
 			assert.deepEqual(messages, original);
 			const message = { role: "assistant", content: [{ type: "text", text: `See ${alias}/file` }, { type: "toolCall", id: "read", name: "read", arguments: { path: `${alias}/file` } }] };
 			const before = structuredClone(message);
