@@ -1,0 +1,11 @@
+{
+  "name": "replacepreambulepi",
+  "version": "0.1.0",
+  "keywords": ["pi-package"],
+  "pi": {
+    "extensions": ["./pi-extension/index.ts"]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}
