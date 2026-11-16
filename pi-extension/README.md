@@ -1,10 +1,34 @@
 # Customize Pi's structured system prompt
 
-Load the extension from the repository root:
+## Installation
+
+With Pi installed, install this repository as a Git package:
+
+```sh
+pi install git:github.com/gonzalez962/replacepreambulepi
+```
+
+No manual clone or separate npm installation is needed. The default branch must contain the root `package.json`; its `pi.extensions` manifest loads only `pi-extension/index.ts`. Pi supplies the host library, and the other repository components and tests are not loaded as extensions.
+
+The command installs for your personal configuration. To declare the package only for the current project, use:
+
+```sh
+pi install --local git:github.com/gonzalez962/replacepreambulepi
+```
+
+Project packages load only after project trust is granted. Restart Pi or use `/reload` after installation. Review the extension source before loading it: extensions run with the permissions of the Pi process.
+
+## Local development
+
+To try a checked-out copy for one invocation, run from the repository root:
 
 ```sh
 pi -e ./pi-extension/index.ts
 ```
+
+Avoid loading the local copy alongside an already enabled Git installation.
+
+## Behavior
 
 The extension projects three changes onto each outgoing request through `context_with_system`:
 
