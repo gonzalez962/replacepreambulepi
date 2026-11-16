@@ -14,7 +14,21 @@ All commands below run from this repository's root unless noted otherwise.
 
 ## Pi extension
 
-Load the extension with Pi:
+Install the extension through Pi's Git package support (no local clone required):
+
+```sh
+pi install git:github.com/gonzalez962/replacepreambulepi
+```
+
+This command uses the repository's default branch and requires its root `package.json` manifest. The manifest declares only `pi-extension/index.ts`: the capture server, native plugin and tests are not loaded as extensions. Pi supplies the host library.
+
+For a project-local installation instead of a personal installation:
+
+```sh
+pi install --local git:github.com/gonzalez962/replacepreambulepi
+```
+
+For local development, load the checked-out extension from the repository root:
 
 ```sh
 pi -e ./pi-extension/index.ts
