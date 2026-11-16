@@ -1,6 +1,6 @@
 # System prompt utilities
 
-Utilities for inspecting and replacing system instructions at different integration points: a Pi extension, a local capture server, and a native CLIProxyAPI plugin. These are separate components, not tools registered for an AI model to call.
+Utilities for inspecting and replacing system instructions at different integration points: a Pi extension, an OpenCode plugin, a local capture server, and a native CLIProxyAPI plugin. These are separate components, not tools registered for an AI model to call.
 
 All commands below run from this repository's root unless noted otherwise.
 
@@ -9,6 +9,7 @@ All commands below run from this repository's root unless noted otherwise.
 | Component | Purpose | Entry point |
 | --- | --- | --- |
 | [Pi extension](pi-extension/README.md) | Customize the preamble, suppress Pi docs, and remove the PI environment guideline in outgoing requests. | `pi-extension/index.ts` |
+| [OpenCode plugin](opencode-plugin/README.md) | Apply configurable literal replacements to outgoing OpenCode V2 system instructions, including on Windows. | `opencode-plugin/server.ts` |
 | [System prompt capture server](capture-system-prompt/README.md) | Capture instructions from API requests locally without forwarding them to a model. | `capture-system-prompt/server.cjs` |
 | [CLIProxyAPI plugin](cpamc-plugin/README.md) | Apply configurable literal replacements to system/developer instructions during request normalization. | `cpamc-plugin/main.go` |
 
@@ -64,6 +65,18 @@ Each accepted capture is saved as JSON under `capture-system-prompt/captures/`. 
 
 See [the capture server README](capture-system-prompt/README.md) for request and response details.
 
+## OpenCode plugin
+
+Load `opencode-plugin/` as a local OpenCode V2 plugin and configure ordered
+`{ "match": "...", "replacement": "..." }` rules through plugin options.
+It rewrites only system text in the outgoing agent-loop request, preserving
+messages, tools, and other properties. Unlike Pi, OpenCode does not expose a
+structured `sections.preamble`: matches must identify the exact text to change.
+Empty rules are a no-op. No CLIProxyAPI host or native build is required.
+
+See [the OpenCode plugin README](opencode-plugin/README.md) for installation,
+configuration, compatibility, tests, and limits.
+
 ## CLIProxyAPI plugin
 
 A native **Linux amd64** plugin that applies ordered, case-sensitive, literal replacements during `request.normalize`. It targets system/developer instructions, not user or tool messages, and is not a final outbound-request filter.
@@ -86,5 +99,6 @@ Rules are persisted in `replacesystemprompt-rules.json`. The selected directory 
 | Capture server | `node --test capture-system-prompt/server.test.cjs` | Node.js 22+. |
 | Plugin configuration form | `node --test cpamc-plugin/form.test.cjs` | Node.js test runner. This does not test the native plugin. |
 | Pi extension | `node --test pi-extension/index.test.mjs pi-extension/path-aliases.test.mjs` | Node.js 22.19+. Covers preamble/docs replacement, guideline removal, and preservation of unrelated transcript data. |
+| OpenCode plugin | `node --test opencode-plugin/server.test.mjs` | Node.js 22.19+. Offline hook tests; no provider calls or SDK installation. |
 
 Native plugin tests are in `cpamc-plugin/plugin_test.go`; running them requires the compatible host module and dependencies described above.
