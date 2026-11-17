@@ -76,3 +76,22 @@ test("removes only the exact PI environment guideline from rules including repea
 	assert.deepEqual(messages, original);
 	assert.deepEqual(await project(result), expected);
 });
+
+test("leaves every section untouched for non-Gemini models, including patches and deletions", async () => {
+	const sentence = "You can inspect PI_* environment variables for current model and session details.";
+	const other = { model: { id: "claude-3-5-sonnet" } };
+	const run = async (messages) => {
+		const hooks = handlers();
+		const result = await hooks.get("context_with_system")({ type: "context_with_system", messages }, other);
+		return result.messages;
+	};
+	const messages = [
+		{ role: "system", sections: { preamble: "original preamble", docs: "<docs>keep me</docs>", rules: `- ${sentence}\n- Keep.` } },
+		{ role: "system", sections: { preamble: "patched preamble", docs: "patched docs", rules: `- ${sentence}` } },
+		{ role: "system", sections: { preamble: null, docs: null, rules: null } },
+		{ role: "user", content: "hello" },
+	];
+	const original = structuredClone(messages);
+	assert.deepEqual(await run(messages), original);
+	assert.deepEqual(messages, original);
+});
