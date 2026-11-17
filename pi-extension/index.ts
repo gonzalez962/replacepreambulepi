@@ -24,18 +24,20 @@ export default function (pi: ExtensionAPI, options?: { getPackageDir?: () => str
 			}) } as typeof message;
 			if (message.role !== "system" || !message.sections) return message;
 			const sections = { ...message.sections };
-			if (Object.hasOwn(sections, "preamble")) sections.preamble = replacement;
-			if (Object.hasOwn(sections, "docs")) sections.docs = docsReplacement;
-			if (typeof sections.rules === "string") {
-				// Remove a standalone guideline with its bullet/newline, preserving other lines.
-				sections.rules = sections.rules
-					.split(/(?<=\n)/)
-					.filter((line) => {
-						const text = line.trim();
-						return text !== environmentGuideline && text !== `- ${environmentGuideline}`;
-					})
-					.join("")
-					.replaceAll(environmentGuideline, "");
+			if (aliasesEnabled) {
+				if (Object.hasOwn(sections, "preamble")) sections.preamble = replacement;
+				if (Object.hasOwn(sections, "docs")) sections.docs = docsReplacement;
+				if (typeof sections.rules === "string") {
+					// Remove a standalone guideline with its bullet/newline, preserving other lines.
+					sections.rules = sections.rules
+						.split(/(?<=\n)/)
+						.filter((line) => {
+							const text = line.trim();
+							return text !== environmentGuideline && text !== `- ${environmentGuideline}`;
+						})
+						.join("")
+						.replaceAll(environmentGuideline, "");
+				}
 			}
 			for (const [key, value] of Object.entries(sections)) {
 				if (typeof value === "string") sections[key] = project(value);

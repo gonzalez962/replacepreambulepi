@@ -30,7 +30,7 @@ Avoid loading the local copy alongside an already enabled Git installation.
 
 ## Behavior
 
-The extension projects three changes onto each outgoing request through `context_with_system`:
+The extension projects three changes onto each outgoing request through `context_with_system`, but only when the request model ID contains `gemini` (case-insensitive):
 
 - Replace existing `preamble` sections with the `replacement` constant in `index.ts`. Its default is `You are a coding assistant. Help users inspect files, run commands, and modify code.`
 - Replace existing `docs` sections with `docsReplacement`, an empty string by default. Set this constant to custom section text if needed.
@@ -38,7 +38,7 @@ The extension projects three changes onto each outgoing request through `context
 
 Edit the constants and restart Pi, or reload the extension where supported, to apply configuration changes. This removes a prompt guideline, not the environment variables themselves or access to them.
 
-All existing system sections are processed, including later patches and deletion patches. Missing `preamble` and `docs` sections are not created. For requests whose model ID contains `gemini` (case-insensitive), outgoing text, system sections and historical tool-call argument strings also project the active core installation prefix to `/__runtime_root__`; tool schemas and structural identifiers are preserved. A missing or non-matching model ID disables path translation; provider identity is not used. The preamble, docs and rules filters remain active for all models. The `.pi` and `gentle-pi` roots are not targeted. A literal occurrence of the reserved alias can collide with a projected path. A custom `SYSTEM.md` may have no structured sections; opaque forced prompts can bypass projection.
+All existing system sections are processed, including later patches and deletion patches. Missing `preamble` and `docs` sections are not created. For requests whose model ID contains `gemini` (case-insensitive), outgoing text, system sections and historical tool-call argument strings also project the active core installation prefix to `/__runtime_root__`; tool schemas and structural identifiers are preserved. A missing or non-matching model ID leaves sections, paths and text untouched; provider identity is not used. The `.pi` and `gentle-pi` roots are not targeted. A literal occurrence of the reserved alias can collide with a projected path. A custom `SYSTEM.md` may have no structured sections; opaque forced prompts can bypass projection.
 
 When the outgoing request enabled aliases, `message_end` restores assistant text and model-issued `read`, `grep`, `find`, `ls` path arguments and `bash` command strings before host validation and `tool_call` permission inspection, even if the selected model has since changed. `write` and `edit` are not supported; nested tool-issued calls are not translated. Bash replacement is literal, not shell parsing: callers must use appropriate shell quoting for the restored path, including spaces and shell metacharacters. Translation does not grant permissions, enforce guards, or provide security. Later extensions may change messages or tool inputs, and streaming output may expose aliases before finalization.
 

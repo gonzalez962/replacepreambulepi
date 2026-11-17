@@ -35,8 +35,12 @@ test("S4.1 gates path projection by request model and retains filters and reques
 			const messages = [{ role: "system", sections: { preamble: "old", docs: "docs", rules: `- ${guideline}\n- Keep ${root}/rules` } }, { role: "user", content: `Read ${root}/file` }];
 			const original = structuredClone(messages);
 			const result = await hooks.get("context_with_system")({ type: "context_with_system", messages }, { model });
+			// The table's `enabled` column is the oracle; never recompute the production predicate here.
+			const expectedSections = enabled
+				? { preamble: "You are a coding assistant. Help users inspect files, run commands, and modify code.", docs: "", rules: `- Keep ${alias}/rules` }
+				: { preamble: "old", docs: "docs", rules: `- ${guideline}\n- Keep ${root}/rules` };
 			assert.deepEqual(result.messages, [
-				{ role: "system", sections: { preamble: "You are a coding assistant. Help users inspect files, run commands, and modify code.", docs: "", rules: `- Keep ${enabled ? alias : root}/rules` } },
+				{ role: "system", sections: expectedSections },
 				{ role: "user", content: `Read ${enabled ? alias : root}/file` },
 			]);
 			assert.deepEqual(messages, original);
