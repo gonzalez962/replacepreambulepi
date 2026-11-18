@@ -1,0 +1,103 @@
+{
+  "format": "openai",
+  "input": {
+    "model": "synthetic-model",
+    "stream": true,
+    "temperature": 0,
+    "messages": [
+      {
+        "role": "system",
+        "content": "Synthetic OpenCode session.\nfixture-original fixture-original fixture-delete Fixture-original"
+      },
+      {
+        "role": "developer",
+        "content": [
+          {
+            "type": "text",
+            "text": "Project instructions: fixture-original.",
+            "cache_control": { "type": "ephemeral" }
+          }
+        ]
+      },
+      { "role": "user", "content": "Inspect fixture-original and fixture-delete." },
+      {
+        "role": "assistant",
+        "content": "Looking up fixture-original.",
+        "tool_calls": [
+          {
+            "id": "call_fixture",
+            "type": "function",
+            "function": { "name": "inspect_fixture", "arguments": "{\"label\":\"fixture-original\"}" }
+          }
+        ]
+      },
+      { "role": "tool", "tool_call_id": "call_fixture", "content": "fixture-original fixture-delete" }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "inspect_fixture",
+          "description": "Inspect fixture-original.",
+          "parameters": {
+            "type": "object",
+            "properties": { "label": { "type": "string", "description": "fixture-original" } },
+            "required": ["label"]
+          }
+        }
+      }
+    ],
+    "tool_choice": "auto",
+    "metadata": { "fixture": "fixture-original" }
+  },
+  "expected": {
+    "model": "synthetic-model",
+    "stream": true,
+    "temperature": 0,
+    "messages": [
+      {
+        "role": "system",
+        "content": "Synthetic OpenCode session.\nfixture-normalized fixture-normalized  Fixture-original"
+      },
+      {
+        "role": "developer",
+        "content": [
+          {
+            "type": "text",
+            "text": "Project instructions: fixture-normalized.",
+            "cache_control": { "type": "ephemeral" }
+          }
+        ]
+      },
+      { "role": "user", "content": "Inspect fixture-original and fixture-delete." },
+      {
+        "role": "assistant",
+        "content": "Looking up fixture-original.",
+        "tool_calls": [
+          {
+            "id": "call_fixture",
+            "type": "function",
+            "function": { "name": "inspect_fixture", "arguments": "{\"label\":\"fixture-original\"}" }
+          }
+        ]
+      },
+      { "role": "tool", "tool_call_id": "call_fixture", "content": "fixture-original fixture-delete" }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "inspect_fixture",
+          "description": "Inspect fixture-original.",
+          "parameters": {
+            "type": "object",
+            "properties": { "label": { "type": "string", "description": "fixture-original" } },
+            "required": ["label"]
+          }
+        }
+      }
+    ],
+    "tool_choice": "auto",
+    "metadata": { "fixture": "fixture-original" }
+  }
+}

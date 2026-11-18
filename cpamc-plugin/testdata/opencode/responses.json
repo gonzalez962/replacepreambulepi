@@ -1,0 +1,87 @@
+{
+  "format": "openai-response",
+  "input": {
+    "model": "synthetic-model",
+    "stream": true,
+    "store": false,
+    "max_output_tokens": 1024,
+    "instructions": "Synthetic OpenCode session: fixture-original.",
+    "input": [
+      {
+        "type": "message",
+        "role": "system",
+        "content": [
+          { "type": "input_text", "text": "fixture-original fixture-original fixture-delete Fixture-original" }
+        ]
+      },
+      { "type": "message", "role": "developer", "content": "Project instructions: fixture-original." },
+      {
+        "type": "message",
+        "role": "user",
+        "content": [
+          { "type": "input_text", "text": "Inspect fixture-original and fixture-delete." },
+          { "type": "input_image", "image_url": "https://example.invalid/fixture-original.png" }
+        ]
+      },
+      { "type": "function_call", "call_id": "call_fixture", "name": "inspect_fixture", "arguments": "{\"label\":\"fixture-original\"}" },
+      { "type": "function_call_output", "call_id": "call_fixture", "output": "fixture-original fixture-delete" },
+      { "type": "message", "role": "assistant", "content": [{ "type": "output_text", "text": "Found fixture-original." }] }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "name": "inspect_fixture",
+        "description": "Inspect fixture-original.",
+        "parameters": {
+          "type": "object",
+          "properties": { "label": { "type": "string", "description": "fixture-original" } },
+          "required": ["label"]
+        }
+      }
+    ],
+    "tool_choice": "auto",
+    "metadata": { "fixture": "fixture-original" }
+  },
+  "expected": {
+    "model": "synthetic-model",
+    "stream": true,
+    "store": false,
+    "max_output_tokens": 1024,
+    "instructions": "Synthetic OpenCode session: fixture-normalized.",
+    "input": [
+      {
+        "type": "message",
+        "role": "system",
+        "content": [
+          { "type": "input_text", "text": "fixture-normalized fixture-normalized  Fixture-original" }
+        ]
+      },
+      { "type": "message", "role": "developer", "content": "Project instructions: fixture-normalized." },
+      {
+        "type": "message",
+        "role": "user",
+        "content": [
+          { "type": "input_text", "text": "Inspect fixture-original and fixture-delete." },
+          { "type": "input_image", "image_url": "https://example.invalid/fixture-original.png" }
+        ]
+      },
+      { "type": "function_call", "call_id": "call_fixture", "name": "inspect_fixture", "arguments": "{\"label\":\"fixture-original\"}" },
+      { "type": "function_call_output", "call_id": "call_fixture", "output": "fixture-original fixture-delete" },
+      { "type": "message", "role": "assistant", "content": [{ "type": "output_text", "text": "Found fixture-original." }] }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "name": "inspect_fixture",
+        "description": "Inspect fixture-original.",
+        "parameters": {
+          "type": "object",
+          "properties": { "label": { "type": "string", "description": "fixture-original" } },
+          "required": ["label"]
+        }
+      }
+    ],
+    "tool_choice": "auto",
+    "metadata": { "fixture": "fixture-original" }
+  }
+}
